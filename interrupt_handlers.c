@@ -3,6 +3,8 @@
 
 #include "efm32gg.h"
 
+void sample();
+
 /* TIMER1 interrupt handler */
 void __attribute__ ((interrupt)) TIMER1_IRQHandler() {  
   /*
