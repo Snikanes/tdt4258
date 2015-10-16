@@ -16,7 +16,11 @@ void setupTimer(uint16_t period) {
   //  3. Enable timer interrupt generation by writing 1 to TIMER1_IEN
   *TIMER1_IEN = 0x01;
   
-  //  4. Start the timer by writing 1 to TIMER1_CMD
+  //  4. Enable timer interrupts by setting bit 12 in register ISER0
+  uint32_t timer = 1 << 12; 
+  *ISER0 |= timer;
+  
+  //  5. Start the timer by writing 1 to TIMER1_CMD
   *TIMER1_CMD = 0x01;
 }
 
