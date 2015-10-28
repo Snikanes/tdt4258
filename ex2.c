@@ -10,20 +10,35 @@
   registers are 16 bits.
 */
 /* The period between sound samples, in clock cycles */
-#define   SAMPLE_PERIOD   14000000
+#define   LOW_ENERGY_FREQUENCY    32768         //Clock frequency of the low energy oscillator
+#define   HIGH_ENERGY_FREQUENCY   14000000      //Clock frequency of the normal clcok
+#define   BITRATE                 32768         //Preferred number of 
 
 /* Declaration of peripheral setup functions */
-void setupTimer(uint32_t period);
+void setupLETimer();
+void enableLETimer();
+void setupNormalTimer(uint32_t period);
+void enableDAC();
 void setupDAC();
 void setupNVIC();
+
+bool energyEfficient = true;
 
 /* Your code will start executing here */
 int main(void) 
 {  
   /* Call the peripheral setup functions */
-  setupGPIO();
   setupDAC();
-  setupTimer(SAMPLE_PERIOD);
+  enableDAC();
+  setupGPIO();
+
+  if (energyEfficient) {
+    setupLETimer();   //We don't supply a period here because we want the default value
+    enableLETimer();
+  }
+  else {
+    setupNormalTimer(HIGH_ENERGY_FREQUENCY / BITRATE);
+  }
   
   /* Enable interrupt handling */
   setupNVIC();
@@ -31,13 +46,22 @@ int main(void)
   /* TODO for higher energy efficiency, sleep while waiting for interrupts
      instead of infinite loop for busy-waiting
   */
-  while(1);
+  if (energyEfficient)  *SCR = 6;
+  else                  __asm("wfi");
 
   return 0;
 }
 
-void setupNVIC()
-{
+void setupNVIC() {
+  if (energyEfficient) {
+    *ISER0 |= 1 << 26; 
+  }	
+  else {
+    *ISER0 |= 1 << 12;
+  }
+  *ISER0 |= 1 << 11;
+  *ISER0 |= 1 << 1;
+
   /* TODO use the NVIC ISERx registers to enable handling of interrupt(s)
      remember two things are necessary for interrupt handling:
       - the peripheral must generate an interrupt signal
